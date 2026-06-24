@@ -1,0 +1,201 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.app { padding: 1rem; max-width: 420px; font-family: var(--font-sans); }
+.search-bar { position: relative; margin-bottom: 1rem; }
+.search-bar input { width: 100%; padding: 12px 44px 12px 16px; font-size: 17px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); background: var(--color-background-primary); color: var(--color-text-primary); outline: none; }
+.search-bar input:focus { border-color: var(--color-border-primary); box-shadow: 0 0 0 3px rgba(83,74,183,0.12); }
+.search-bar .clear-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-text-secondary); font-size: 18px; padding: 4px; display: none; }
+.results { display: flex; flex-direction: column; gap: 8px; }
+.result-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
+.result-card .label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-bottom: 4px; }
+.result-card .name { font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 2px; }
+.result-card .sub-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-tertiary); margin-top: 10px; margin-bottom: 4px; }
+.result-card .dci-name { font-size: 16px; color: var(--color-text-secondary); }
+.result-card .img-btn { margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 13px; font-weight: 500; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-secondary); color: var(--color-text-secondary); cursor: pointer; text-decoration: none; }
+.result-card .img-btn:active { opacity: 0.75; }
+.empty { text-align: center; padding: 2rem 1rem; color: var(--color-text-secondary); font-size: 15px; }
+.empty i { font-size: 32px; display: block; margin-bottom: 8px; color: var(--color-text-tertiary); }
+.tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
+.tab { flex: 1; padding: 8px; font-size: 13px; font-weight: 500; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-secondary); color: var(--color-text-secondary); cursor: pointer; text-align: center; }
+.tab.active { background: var(--color-background-primary); color: var(--color-text-primary); border-color: var(--color-border-primary); }
+.section-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 8px; margin-top: 0.5rem; }
+.add-form { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 8px; }
+.add-form input { padding: 10px 12px; font-size: 15px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); outline: none; }
+.add-form input:focus { border-color: var(--color-border-primary); }
+.add-btn { padding: 10px; font-size: 14px; font-weight: 500; border: none; border-radius: var(--border-radius-md); background: #534AB7; color: #fff; cursor: pointer; }
+.med-list { display: flex; flex-direction: column; gap: 6px; }
+.med-item { display: flex; align-items: center; background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 12px; gap: 8px; }
+.med-item .names { flex: 1; }
+.med-item .princeps { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.med-item .dci { font-size: 13px; color: var(--color-text-secondary); }
+.med-item .del-btn { background: none; border: none; cursor: pointer; color: var(--color-text-tertiary); font-size: 16px; padding: 4px; }
+.msg { font-size: 13px; padding: 6px 10px; border-radius: var(--border-radius-md); margin-bottom: 8px; display: none; }
+.no-results { padding: 1.5rem 0; text-align: center; color: var(--color-text-secondary); font-size: 14px; }
+.sync-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+.sync-btn { flex: 1; padding: 9px 8px; font-size: 13px; font-weight: 500; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.sync-hint { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 1rem; line-height: 1.5; padding: 8px 10px; border-left: 2px solid var(--color-border-secondary); }
+</style>
+
+<div class="app">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('search')"><i class="ti ti-search"></i> Chercher</div>
+    <div class="tab" onclick="switchTab('manage')"><i class="ti ti-edit"></i> Ma liste</div>
+  </div>
+
+  <div id="tab-search">
+    <div class="search-bar">
+      <input type="text" id="query" placeholder="Princeps ou DCI..." autocomplete="off" oninput="search(this.value)" />
+      <button class="clear-btn" id="clear-btn" onclick="clearSearch()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="results" id="results">
+      <div class="empty"><i class="ti ti-pill"></i>Tape un nom pour trouver l'équivalent</div>
+    </div>
+  </div>
+
+  <div id="tab-manage" style="display:none">
+    <div class="add-form">
+      <input type="text" id="new-princeps" placeholder="Princeps (ex : Doliprane)" autocapitalize="words" />
+      <input type="text" id="new-dci" placeholder="DCI (ex : Paracétamol)" autocapitalize="words" />
+      <button class="add-btn" onclick="addMed()"><i class="ti ti-plus"></i> Ajouter</button>
+    </div>
+    <div class="sync-row">
+      <button class="sync-btn" onclick="exportList()"><i class="ti ti-download"></i> Exporter</button>
+      <button class="sync-btn" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i> Importer</button>
+      <input type="file" id="import-input" accept=".json" style="display:none" onchange="importList(event)" />
+    </div>
+    <div class="sync-hint">Pour synchroniser ordi ↔ téléphone : exporte depuis l'ordi, transfère le fichier (mail, WhatsApp...), importe sur le téléphone.</div>
+    <div class="msg" id="msg"></div>
+    <div class="section-title" id="list-title"></div>
+    <div class="med-list" id="med-list"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'meds_v1';
+const DEFAULTS = [
+  {p:'Doliprane', d:'Paracétamol'},{p:'Advil', d:'Ibuprofène'},
+  {p:'Augmentin', d:'Amoxicilline/Acide clavulanique'},{p:'Amoxicilline', d:'Amoxicilline'},
+  {p:'Kardégic', d:'Acide acétylsalicylique'},{p:'Lexomil', d:'Bromazépam'},
+  {p:'Xanax', d:'Alprazolam'},{p:'Lamaline', d:'Paracétamol/Opium/Caféine'},
+  {p:'Spasfon', d:'Phloroglucinol'},{p:'Smecta', d:'Diosmectite'},
+  {p:'Aerius', d:'Desloratadine'},{p:'Zyrtec', d:'Cétirizine'},
+  {p:'Inexium', d:'Ésoméprazole'},{p:'Mopral', d:'Oméprazole'},
+  {p:'Cordarone', d:'Amiodarone'},{p:'Zyloric', d:'Allopurinol'},
+  {p:'Sintrom', d:'Acénocoumarol'},{p:'Préviscan', d:'Fluindione'},
+  {p:'Eliquis', d:'Apixaban'},{p:'Xarelto', d:'Rivaroxaban'},
+];
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [...DEFAULTS]; }
+  catch { return [...DEFAULTS]; }
+}
+function save(m) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(m)); } catch {} }
+
+let meds = load();
+
+function switchTab(t) {
+  document.getElementById('tab-search').style.display = t === 'search' ? '' : 'none';
+  document.getElementById('tab-manage').style.display = t === 'manage' ? '' : 'none';
+  document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', (i===0&&t==='search')||(i===1&&t==='manage')));
+  if (t === 'manage') renderList();
+}
+
+function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function search(q) {
+  document.getElementById('clear-btn').style.display = q ? 'block' : 'none';
+  const res = document.getElementById('results');
+  if (!q.trim()) { res.innerHTML = '<div class="empty"><i class="ti ti-pill"></i>Tape un nom pour trouver l\'équivalent</div>'; return; }
+  const nq = norm(q);
+  const hits = meds.filter(m => norm(m.p).includes(nq) || norm(m.d).includes(nq));
+  if (!hits.length) { res.innerHTML = '<div class="no-results">Aucun résultat — ajoute ce médicament dans "Ma liste"</div>'; return; }
+  res.innerHTML = hits.map(m => {
+    const byP = norm(m.p).includes(nq);
+    const imgQuery = encodeURIComponent(m.p + ' médicament boîte');
+    return `<div class="result-card">
+      <div class="label">${byP ? 'Princeps' : 'DCI'}</div>
+      <div class="name">${esc(byP ? m.p : m.d)}</div>
+      <div class="sub-label">${byP ? 'DCI' : 'Princeps'}</div>
+      <div class="dci-name">${esc(byP ? m.d : m.p)}</div>
+      <a class="img-btn" href="https://www.google.com/search?tbm=isch&q=${imgQuery}" target="_blank"><i class="ti ti-photo"></i> Voir la boîte</a>
+    </div>`;
+  }).join('');
+}
+
+function clearSearch() {
+  document.getElementById('query').value = '';
+  search('');
+  document.getElementById('query').focus();
+}
+
+function addMed() {
+  const p = document.getElementById('new-princeps').value.trim();
+  const d = document.getElementById('new-dci').value.trim();
+  if (!p || !d) { showMsg('Remplis les deux champs', 'warn'); return; }
+  if (meds.some(m => norm(m.p) === norm(p))) { showMsg('Ce princeps existe déjà', 'warn'); return; }
+  meds.push({p, d});
+  meds.sort((a,b) => norm(a.p).localeCompare(norm(b.p)));
+  save(meds);
+  document.getElementById('new-princeps').value = '';
+  document.getElementById('new-dci').value = '';
+  showMsg(`${p} ajouté !`, 'ok');
+  renderList();
+}
+
+function delMed(i) { meds.splice(i,1); save(meds); renderList(); }
+
+function renderList() {
+  const el = document.getElementById('med-list');
+  document.getElementById('list-title').textContent = `${meds.length} médicament${meds.length>1?'s':''}`;
+  if (!meds.length) { el.innerHTML = '<div class="no-results">Aucun médicament — ajoutes-en un !</div>'; return; }
+  el.innerHTML = meds.map((m,i) => `
+    <div class="med-item">
+      <div class="names">
+        <div class="princeps">${esc(m.p)}</div>
+        <div class="dci">${esc(m.d)}</div>
+      </div>
+      <button class="del-btn" onclick="delMed(${i})"><i class="ti ti-trash"></i></button>
+    </div>`).join('');
+}
+
+function exportList() {
+  const blob = new Blob([JSON.stringify(meds,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'medicaments.json';
+  a.click();
+  showMsg('Fichier exporté !', 'ok');
+}
+
+function importList(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported) || !imported[0]?.p) { showMsg('Fichier invalide', 'warn'); return; }
+      const existing = new Set(meds.map(m => norm(m.p)));
+      let added = 0;
+      imported.forEach(m => { if (!existing.has(norm(m.p))) { meds.push(m); added++; } });
+      meds.sort((a,b) => norm(a.p).localeCompare(norm(b.p)));
+      save(meds);
+      showMsg(`${added} médicament${added>1?'s':''} importé${added>1?'s':''}`, 'ok');
+      renderList();
+    } catch { showMsg('Erreur de lecture', 'warn'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function showMsg(txt, type) {
+  const el = document.getElementById('msg');
+  el.textContent = txt;
+  el.style.display = 'block';
+  el.style.background = type==='ok' ? 'var(--color-background-success)' : 'var(--color-background-warning)';
+  el.style.color = type==='ok' ? 'var(--color-text-success)' : 'var(--color-text-warning)';
+  setTimeout(() => el.style.display = 'none', 2500);
+}
+</script>
